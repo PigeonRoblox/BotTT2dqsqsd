@@ -107,7 +107,7 @@ function downloadFile(url) {
 const commands = [
   new SlashCommandBuilder()
     .setName('fastsearch')
-    .setDescription('Cherche rapidement un terme dans la base de données')
+    .setDescription('Find something fastly in the database')
     .addStringOption(opt =>
       opt.setName('terme').setDescription('Le terme à chercher').setRequired(true)
     ),
@@ -116,35 +116,35 @@ const commands = [
     .setName('bettersearch')
     .setDescription('Recherche approfondie avec export fichier texte')
     .addStringOption(opt =>
-      opt.setName('terme1').setDescription('Premier terme à chercher').setRequired(true)
+      opt.setName('terme1').setDescription('term to search').setRequired(true)
     )
     .addStringOption(opt =>
-      opt.setName('terme2').setDescription('Deuxième terme à chercher (optionnel)').setRequired(false)
+      opt.setName('terme2').setDescription('Second term to search but not obligatory').setRequired(false)
     ),
 
   new SlashCommandBuilder()
     .setName('createpost')
-    .setDescription('Créer un post dans la base de données')
+    .setDescription('Create a post for the data base')
     .addStringOption(opt =>
       opt.setName('type')
-        .setDescription('Type de post: profil, fichier ou autopost')
+        .setDescription('Post type: profile, folder ou autopost')
         .setRequired(true)
         .addChoices(
-          { name: 'Profil', value: 'profil' },
-          { name: 'Fichier', value: 'fichier' },
+          { name: 'Profile', value: 'profil' },
+          { name: 'Folder', value: 'fichier' },
           { name: 'Autopost', value: 'autopost' },
         )
     )
     .addStringOption(opt =>
       opt.setName('fichier')
-        .setDescription('URL du fichier (ex: lien MediaFire) ou coller le contenu directement')
+        .setDescription('Text or .raw url from pastebin or github')
         .setRequired(true)
     )
     .addStringOption(opt =>
-      opt.setName('title').setDescription('[Profil uniquement] Titre du profil').setRequired(false)
+      opt.setName('title').setDescription('[PROFILE ONLY] Profil Title').setRequired(false)
     )
     .addStringOption(opt =>
-      opt.setName('desc').setDescription('[Profil uniquement] Description/Bio').setRequired(false)
+      opt.setName('desc').setDescription('[PROFILE ONLY] Profil bio/desc').setRequired(false)
     ),
 ];
 
@@ -154,7 +154,7 @@ const commands = [
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
 client.once('ready', async () => {
-  console.log(`✅ Bot connecté en tant que ${client.user.tag}`);
+  console.log(`✅ Bot connected as ${client.user.tag}`);
 
   // Enregistrer les slash commands
   const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
@@ -163,7 +163,7 @@ client.once('ready', async () => {
       Routes.applicationCommands(client.user.id),
       { body: commands.map(c => c.toJSON()) }
     );
-    console.log('✅ Slash commands enregistrées globalement');
+    console.log('✅ Slash commands saved globaly');
   } catch (e) {
     console.error('Erreur enregistrement commands:', e);
   }
@@ -197,7 +197,7 @@ client.on('interactionCreate', async (interaction) => {
       interaction.editReply(msg);
     } catch (e) {
       console.error(e);
-      interaction.editReply('❌ Erreur lors de la recherche.');
+      interaction.editReply('❌ Error while searching. Please provide text or an .raw url from github or pastebin');
     }
   }
 
@@ -224,8 +224,8 @@ client.on('interactionCreate', async (interaction) => {
       }
 
       // Générer le fichier texte
-      let content = `SecureDB — Résultats de recherche\n`;
-      content += `Termes recherchés : ${termes.join(', ')}\n`;
+      let content = `SecureDB — Results of search\n`;
+      content += `Terms searched : ${termes.join(', ')}\n`;
       content += `Date : ${new Date().toLocaleString('fr-FR')}\n`;
       content += `${'='.repeat(60)}\n\n`;
 
@@ -233,15 +233,15 @@ client.on('interactionCreate', async (interaction) => {
         const nom = p.name || p.title || p.fileName || 'Post sans titre';
         const texte = getPostText(p);
 
-        content += `NOM DU POST : ${nom}\n`;
+        content += `POST NAME : ${nom}\n`;
         content += `${'-'.repeat(40)}\n`;
 
         // Contenu du post (résumé si trop long)
         const contenu = texte.slice(0, 600);
-        content += `CONTENU :\n${contenu}${texte.length > 600 ? '...' : ''}\n\n`;
+        content += `CONTENT :\n${contenu}${texte.length > 600 ? '...' : ''}\n\n`;
 
         // Endroits où les termes ont été trouvés (en MAJUSCULES)
-        content += `TERMES TROUVÉS :\n`;
+        content += `TERMS FOUND :\n`;
         for (const terme of termes) {
           const positions = findTermPositions(texte, terme);
           if (positions.length) {
@@ -265,14 +265,14 @@ client.on('interactionCreate', async (interaction) => {
       });
 
       await interaction.editReply({
-        content: `✅ We found **${found.length}** result${found.length > 1 ? 's' : ''}** for: \`${termes.join(', ')}\`\nVoici le fichier de résultats détaillé :`,
+        content: `✅ We found **${found.length}** result${found.length > 1 ? 's' : ''}** for: \`${termes.join(', ')}\`\nHere is the folder in details :`,
         files: [attachment]
       });
 
       fs.unlink(tmpFile, () => {});
     } catch (e) {
       console.error(e);
-      interaction.editReply('❌ Erreur lors de la recherche approfondie.');
+      interaction.editReply('❌ Erreur while better search. Please provide an text or an .raw url from github or pastebin');
     }
   }
 
@@ -294,7 +294,7 @@ client.on('interactionCreate', async (interaction) => {
 
       if (isUrl) {
         // Télécharger le fichier
-        await interaction.editReply('⏳ Téléchargement du fichier en cours...');
+        await interaction.editReply('⏳ Downloading file...');
         try {
           const tmpPath = await downloadFile(fichierInput);
           fileContent = fs.readFileSync(tmpPath, 'utf8');
@@ -325,7 +325,7 @@ client.on('interactionCreate', async (interaction) => {
       if (type === 'profil') {
         // Post de type profil
         if (!title) {
-          return interaction.editReply('❌ Pour un profil, tu dois remplir le champ `title` (`/createpost type:profil fichier:... title:TON_TITRE`).');
+          return interaction.editReply('❌ For a profile, you need to put an `title` (`/createpost type:profile folder:... title:YOUR_TITLE`).');
         }
         newPost.type = 'profile';
         newPost.name = title;
@@ -361,16 +361,16 @@ client.on('interactionCreate', async (interaction) => {
         }
 
         await savePosts(posts);
-        return interaction.editReply(`✅ **Autopost terminé !** ${created} post${created > 1 ? 's' : ''} créé${created > 1 ? 's' : ''} sous le nom **"${baseName} 1, ${baseName} 2..."** dans la base de données.`);
+        return interaction.editReply(`✅ **Autopost done !** ${created} post${created > 1 ? 's' : ''} créé${created > 1 ? 's' : ''} sous le nom **"${baseName} 1, ${baseName} 2..."** in data base.`);
       }
 
       posts.push(newPost);
       await savePosts(posts);
 
-      interaction.editReply(`✅ **Post créé avec succès !**\n📌 **Nom :** ${newPost.name || newPost.title}\n📁 **Type :** ${type}\n👤 **Par :** ${interaction.user.username}\n\nVisible sur le site dès maintenant !`);
+      interaction.editReply(`✅ **Post created with success !**\n📌 **Nom :** ${newPost.name || newPost.title}\n📁 **Type :** ${type}\n👤 **By :** ${interaction.user.username}\n\nVisible on the website right now !`);
     } catch (e) {
       console.error(e);
-      interaction.editReply('❌ Erreur lors de la création du post.');
+      interaction.editReply('❌ Erreur while creating post');
     }
   }
 });
