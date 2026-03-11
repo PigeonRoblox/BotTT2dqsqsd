@@ -1,0 +1,13 @@
+{
+  "name": "securedb-discord-bot",
+  "version": "1.0.0",
+  "description": "Bot Discord pour SecureDB",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.15.3",
+    "firebase": "^10.12.0"
+  }
+}
